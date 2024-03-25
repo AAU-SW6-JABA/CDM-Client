@@ -1,0 +1,38 @@
+{
+	"name": "cdm-client",
+	"version": "0.0.1",
+	"scripts": {
+		"setup:proto-types": "yarn run proto-loader-gen-types --grpcLib=@grpc/grpc-js --outDir=gen/protobuf CDM-ProtocolBuffer/cdm_protobuf.proto",
+		"setup": "yarn setup:proto-types",
+		"dev": "vite dev",
+		"build": "vite build",
+		"preview": "vite preview",
+		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
+		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
+		"lint": "prettier --check . && eslint .",
+		"format": "prettier --write . && eslint --fix ."
+	},
+	"dependencies": {
+		"@grpc/grpc-js": "^1.10.3",
+		"@grpc/proto-loader": "^0.7.10"
+	},
+	"devDependencies": {
+		"@sveltejs/adapter-auto": "^3.1.1",
+		"@sveltejs/kit": "^2.5.4",
+		"@sveltejs/vite-plugin-svelte": "^3.0.2",
+		"@types/eslint": "^8.56.6",
+		"@typescript-eslint/eslint-plugin": "^7.3.1",
+		"@typescript-eslint/parser": "^7.3.1",
+		"eslint": "^8.57.0",
+		"eslint-config-prettier": "^9.1.0",
+		"eslint-plugin-svelte": "^2.35.1",
+		"prettier": "^3.2.5",
+		"prettier-plugin-svelte": "^3.2.2",
+		"svelte": "^4.2.12",
+		"svelte-check": "^3.6.8",
+		"tslib": "^2.6.2",
+		"typescript": "^5.4.3",
+		"vite": "^5.2.6"
+	},
+	"type": "module"
+}
