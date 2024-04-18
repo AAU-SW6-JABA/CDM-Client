@@ -182,7 +182,7 @@
 	#settings > * {
 		display: block;
 	}
-	.serverFields {
+	#settings .serverFields {
 		display: inline;
 	}
 	#heatmap {
