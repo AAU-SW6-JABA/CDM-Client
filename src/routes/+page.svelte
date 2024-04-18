@@ -1,4 +1,178 @@
-<h1>Welcome to SvelteKit</h1>
-<p>
-  Visit <a href="https://kit.svelte.dev">kit.svelte.dev</a> to read the documentation
-</p>
+<script lang="ts">
+	import { browser } from "$app/environment";
+	import { onMount } from "svelte";
+	import h337 from "@mars3d/heatmap.js";
+	import debounce from "debounce-fn";
+
+	type Location = { x: number; y: number };
+
+	let urlInputElement: HTMLInputElement;
+	let inputServerUrl: string;
+	let serverUrl: string;
+	$: if(inputServerUrl && urlInputElement){
+		if(urlInputElement.reportValidity()){
+			serverUrl = inputServerUrl;
+		}
+	}
+
+	let heatmapElement: HTMLElement;
+	let heatmapRuntime: h337.Heatmap<"value", "x", "y"> | undefined;
+
+	let maxX = 0;
+	let maxY = 0;
+
+	let surveyTime = dateToDatetimeString(new Date());
+	let surveyFilterTime = 5;
+
+	let locationStream: EventSource | undefined;
+	let isLive = true;
+
+	const drawLocationsDebounced = debounce(drawLocations, { wait: 1000 });
+
+	let locations: Location[] = [];
+	$: drawLocationsDebounced(maxX, maxY, locations, heatmapRuntime);
+	$: if (isLive && browser) {
+		if (!locationStream) {
+			console.log("Connecting to mr. server pweese");
+			locationStream = new EventSource("/api/subscribeToLocations");
+			locationStream.addEventListener("locations", handleNewLocations);
+		}
+	} else {
+		if (locationStream) {
+			locationStream.close();
+			locationStream.removeEventListener("locations", handleNewLocations);
+			locationStream = undefined;
+		}
+	}
+
+	function handleNewLocations(event: MessageEvent<any>) {
+		console.log(event);
+	}
+
+	/*onMount(async () => {
+		const fetchUrl = new URL("/api/getLocations");
+		fetchUrl.searchParams.set("serverUrl", serverUrl);
+		const response = await fetch(fetchUrl, {
+			method: "POST",
+			body: JSON.stringify({ request: {
+			} }),
+			headers: {
+				"Content-Type": "application/json",
+			},
+		});
+		locations = await response.json();
+	});*/
+
+	onMount(() => {
+		heatmapRuntime = h337.create({
+			container: heatmapElement,
+		});
+	});
+	onMount(() => {
+		const resizeObserver = new ResizeObserver((entries) => {
+			const entry = entries.find(
+				(entry) => entry.target === heatmapElement,
+			);
+			if (!entry) return;
+			maxX = entry.contentRect.width;
+			maxY = entry.contentRect.height;
+		});
+		resizeObserver.observe(heatmapElement);
+		return () => {
+			resizeObserver.disconnect();
+		};
+	});
+
+	function drawLocations(
+		maxX?: number,
+		maxY?: number,
+		locations?: Location[],
+		heatmapRuntime?: h337.Heatmap<"value", "x", "y">,
+	) {
+		if (!maxX || !maxY || !locations || !heatmapRuntime) {
+			console.log("NICE TRY", locations);
+			return;
+		}
+		const rescaledLocations = rescaleLocations(maxX, maxY, locations);
+		console.log("YEP", rescaledLocations);
+		heatmapRuntime.setData({
+			max: 3,
+			min: 0,
+			data: [
+				...rescaledLocations.map((data) => {
+					return { ...data, value: 1 };
+				}),
+			],
+		});
+	}
+	function rescaleLocations(
+		maxX: number,
+		maxY: number,
+		locations: Location[],
+	) {
+		const realX = Math.max(...locations.map((location) => location.x));
+		const realY = Math.max(...locations.map((location) => location.y));
+
+		const scaleX = maxX / realX;
+		const scaleY = maxY / realY;
+
+		const rescaledLocations: Location[] = [];
+
+		for (const location of locations) {
+			rescaledLocations.push({
+				x: location.x * scaleX,
+				y: location.y * scaleY,
+			});
+		}
+
+		return rescaledLocations;
+	}
+
+	function dateToDatetimeString(date: Date): string {
+		const year = date.getFullYear();
+		const month = String(date.getMonth() + 1).padStart(2, "0");
+		const day = String(date.getDate()).padStart(2, "0");
+		const hours = String(date.getHours()).padStart(2, "0");
+		const minutes = String(date.getMinutes()).padStart(2, "0");
+		return `${year}-${month}-${day}T${hours}:${minutes}`;
+	}
+</script>
+
+<h1>Heatmap</h1>
+<fieldset id="settings">
+	<legend>Settings</legend>
+	<label>
+		Use server
+		<input type="url" bind:this={urlInputElement} bind:value={inputServerUrl} placeholder="e.g. localhost:3000" />
+	</label>
+	<label>
+		Show live locations
+		<input type="checkbox" bind:checked={isLive} />
+	</label>
+	<label>
+		Show locations collected at
+		<input
+			type="datetime-local"
+			bind:value={surveyTime}
+			disabled={isLive}
+		/>
+	</label>
+	<label>
+		Filter locations older than
+		<input type="number" bind:value={surveyFilterTime} />
+		minutes
+	</label>
+</fieldset>
+<div id="heatmap" bind:this={heatmapElement}></div>
+
+<style>
+	#settings > * {
+		display: block;
+	}
+	#heatmap {
+		margin-left: auto;
+		margin-right: auto;
+		width: 90svw;
+		height: 80svh;
+	}
+</style>
