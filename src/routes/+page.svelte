@@ -3,6 +3,7 @@
 	import { onMount } from "svelte";
 	import h337 from "@mars3d/heatmap.js";
 	import debounce from "debounce-fn";
+	import { URLParams } from "$lib/urlSearchParams";
 
 	type Location = { x: number; y: number };
 
@@ -49,19 +50,6 @@
 		console.log(event);
 	}
 
-	onMount(async () => {
-		const fetchUrl = new URL("/api/getLocations", window.location.origin);
-		fetchUrl.searchParams.set("serverUrl", serverUrl);
-		const response = await fetch(fetchUrl, {
-			method: "POST",
-			body: JSON.stringify({ request: {} }),
-			headers: {
-				"Content-Type": "application/json",
-			},
-		});
-		locations = await response.json();
-	});
-
 	onMount(() => {
 		heatmapRuntime = h337.create({
 			container: heatmapElement,
@@ -81,6 +69,23 @@
 			resizeObserver.disconnect();
 		};
 	});
+
+	$: getLocationsDebounced(serverUrl);
+	const getLocationsDebounced = debounce(getLocations, { wait: 1000 });
+	async function getLocations(url: string) {
+		if (!browser) return;
+		const fetchUrl = new URL("/api/getLocations", window.location.origin);
+		fetchUrl.searchParams.set(URLParams.serverUrl, url);
+		const response = await fetch(fetchUrl, {
+			method: "POST",
+			body: JSON.stringify({ request: {} }),
+			headers: {
+				"Content-Type": "application/json",
+			},
+		});
+		locations = await response.json();
+		console.log(locations);
+	}
 
 	function drawLocations(
 		maxX?: number,
@@ -143,7 +148,7 @@
 <h1>Heatmap</h1>
 <fieldset id="settings">
 	<legend>Settings</legend>
-	<label>
+	<label class="serverFields">
 		Use server
 		<input
 			type="url"
@@ -152,6 +157,7 @@
 			placeholder="e.g. localhost:3000"
 		/>
 	</label>
+	<p class="serverFields">Test</p>
 	<label>
 		Show live locations
 		<input type="checkbox" bind:checked={isLive} />
@@ -175,6 +181,9 @@
 <style>
 	#settings > * {
 		display: block;
+	}
+	.serverFields {
+		display: inline;
 	}
 	#heatmap {
 		margin-left: auto;
