@@ -3,7 +3,7 @@
 	"version": "0.0.1",
 	"scripts": {
 		"setup:proto-types": "yarn run proto-loader-gen-types --grpcLib=@grpc/grpc-js --outDir=gen/protobuf CDM-ProtocolBuffer/cdm_protobuf.proto",
-		"setup": "yarn setup:proto-types",
+		"setup": "yarn && yarn setup:proto-types",
 		"dev": "vite dev",
 		"build": "vite build",
 		"preview": "vite preview",

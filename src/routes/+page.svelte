@@ -9,8 +9,8 @@
 	let urlInputElement: HTMLInputElement;
 	let inputServerUrl: string;
 	let serverUrl: string;
-	$: if(inputServerUrl && urlInputElement){
-		if(urlInputElement.reportValidity()){
+	$: if (inputServerUrl && urlInputElement) {
+		if (urlInputElement.reportValidity()) {
 			serverUrl = inputServerUrl;
 		}
 	}
@@ -25,7 +25,7 @@
 	let surveyFilterTime = 5;
 
 	let locationStream: EventSource | undefined;
-	let isLive = true;
+	let isLive = false;
 
 	const drawLocationsDebounced = debounce(drawLocations, { wait: 1000 });
 
@@ -49,19 +49,18 @@
 		console.log(event);
 	}
 
-	/*onMount(async () => {
-		const fetchUrl = new URL("/api/getLocations");
+	onMount(async () => {
+		const fetchUrl = new URL("/api/getLocations", window.location.origin);
 		fetchUrl.searchParams.set("serverUrl", serverUrl);
 		const response = await fetch(fetchUrl, {
 			method: "POST",
-			body: JSON.stringify({ request: {
-			} }),
+			body: JSON.stringify({ request: {} }),
 			headers: {
 				"Content-Type": "application/json",
 			},
 		});
 		locations = await response.json();
-	});*/
+	});
 
 	onMount(() => {
 		heatmapRuntime = h337.create({
@@ -90,11 +89,14 @@
 		heatmapRuntime?: h337.Heatmap<"value", "x", "y">,
 	) {
 		if (!maxX || !maxY || !locations || !heatmapRuntime) {
-			console.log("NICE TRY", locations);
 			return;
 		}
-		const rescaledLocations = rescaleLocations(maxX, maxY, locations);
-		console.log("YEP", rescaledLocations);
+		const rescaledLocations = rescaleLocations(
+			Math.floor(maxX),
+			Math.floor(maxY),
+			locations,
+		);
+
 		heatmapRuntime.setData({
 			max: 3,
 			min: 0,
@@ -143,7 +145,12 @@
 	<legend>Settings</legend>
 	<label>
 		Use server
-		<input type="url" bind:this={urlInputElement} bind:value={inputServerUrl} placeholder="e.g. localhost:3000" />
+		<input
+			type="url"
+			bind:this={urlInputElement}
+			bind:value={inputServerUrl}
+			placeholder="e.g. localhost:3000"
+		/>
 	</label>
 	<label>
 		Show live locations
