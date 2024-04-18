@@ -8,20 +8,20 @@ export const clientControllers: Writable<
 	Set<ReadableStreamDefaultController<Uint8Array>>
 > = writable(new Set());
 
-let bingAntenna: ClientReadableStream<Locations__Output> | undefined;
+let clientController: ClientReadableStream<Locations__Output> | undefined;
 
 clientControllers.subscribe((set) => {
 	console.log(set);
 	if (set.size === 0) {
-		if (bingAntenna) {
-			bingAntenna.destroy();
-			bingAntenna = undefined;
+		if (clientController) {
+			clientController.destroy();
+			clientController = undefined;
 		}
 	} else {
-		if (!bingAntenna) {
+		if (!clientController) {
 			console.log("Connecting to grpc db");
-			bingAntenna = client.SubscribeToLocations({});
-			bindStream(bingAntenna);
+			clientController = client.SubscribeToLocations({});
+			bindStream(clientController);
 		}
 	}
 });
@@ -29,11 +29,11 @@ clientControllers.subscribe((set) => {
 function bindStream(stream: ClientReadableStream<Locations__Output>): void {
 	stream.addListener("data", (data) => {
 		console.log(data);
-		bingAntennaBingSendDataToClientsBingAntenna(data);
+		sendDataToClients(data);
 	});
 }
 
-function bingAntennaBingSendDataToClientsBingAntenna(data) {
+function sendDataToClients(data) {
 	const encoder = new TextEncoder();
 	const eventData = encoder.encode(
 		`event: locations\ndata:${JSON.stringify(data)}\n\n`,
