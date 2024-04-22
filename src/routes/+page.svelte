@@ -7,6 +7,15 @@
 
 	type Location = { x: number; y: number };
 
+	enum AddressStatus {
+		Initial = "Write the address of your CDM-Server",
+		Valid = "Connection to server established",
+		Invalid = "Unable to connect to server",
+		Connecting = "Connecting to server...",
+	}
+	let addressStatus: AddressStatus = AddressStatus.Initial;
+	let addressParagraphElement: HTMLParagraphElement;
+
 	let urlInputElement: HTMLInputElement;
 	let inputServerUrl: string;
 	let serverUrl: string;
@@ -22,8 +31,8 @@
 	let maxX = 0;
 	let maxY = 0;
 
-	let surveyTime = dateToDatetimeString(new Date());
-	let surveyFilterTime = 5;
+	let timeIntervalBegin = dateToDatetimeString(new Date());
+	let timeIntervalOffset = 5;
 
 	let locationStream: EventSource | undefined;
 	let isLive = false;
@@ -70,12 +79,29 @@
 		};
 	});
 
-	$: getLocationsDebounced(serverUrl);
+	$: {
+		getLocationsDebounced(serverUrl);
+		addressStatus = AddressStatus.Connecting;
+	}
+
 	const getLocationsDebounced = debounce(getLocations, { wait: 1000 });
 	async function getLocations(url: string) {
 		if (!browser) return;
+
+		const timeIntervalBeginUnix = new Date(timeIntervalBegin).getTime();
+		const timeIntervalOffsetUnix =
+			timeIntervalBeginUnix + timeIntervalOffset * 60 * 1000;
+
 		const fetchUrl = new URL("/api/getLocations", window.location.origin);
 		fetchUrl.searchParams.set(URLParams.serverUrl, url);
+		fetchUrl.searchParams.set(
+			URLParams.timeIntervalBegin,
+			timeIntervalBeginUnix.toString(),
+		);
+		fetchUrl.searchParams.set(
+			URLParams.timeIntervalEnd,
+			timeIntervalOffsetUnix.toString(),
+		);
 		const response = await fetch(fetchUrl, {
 			method: "POST",
 			body: JSON.stringify({ request: {} }),
@@ -83,8 +109,14 @@
 				"Content-Type": "application/json",
 			},
 		});
+
+		if (!response.ok) {
+			addressStatus = AddressStatus.Invalid;
+			return;
+		}
+
 		locations = await response.json();
-		console.log(locations);
+		addressStatus = AddressStatus.Valid;
 	}
 
 	function drawLocations(
@@ -157,7 +189,13 @@
 			placeholder="e.g. localhost:3000"
 		/>
 	</label>
-	<p class="serverFields">Test</p>
+	<p
+		class="serverFields"
+		style="margin-left: 1em;"
+		bind:this={addressParagraphElement}
+	>
+		<i> {addressStatus} </i>
+	</p>
 	<label>
 		Show live locations
 		<input type="checkbox" bind:checked={isLive} />
@@ -166,13 +204,13 @@
 		Show locations collected at
 		<input
 			type="datetime-local"
-			bind:value={surveyTime}
+			bind:value={timeIntervalBegin}
 			disabled={isLive}
 		/>
 	</label>
 	<label>
-		Filter locations older than
-		<input type="number" bind:value={surveyFilterTime} />
+		Filter locations earlier than
+		<input type="number" bind:value={timeIntervalOffset} />
 		minutes
 	</label>
 </fieldset>
