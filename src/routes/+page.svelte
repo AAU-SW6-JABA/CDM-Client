@@ -1,11 +1,10 @@
 <script lang="ts">
+	import type { Location } from "$lib/Location";
 	import { browser } from "$app/environment";
-	import { onMount } from "svelte";
-	import h337 from "@mars3d/heatmap.js";
 	import debounce from "debounce-fn";
 	import { URLParams } from "$lib/urlSearchParams";
-
-	type Location = { x: number; y: number };
+	import FlowMap from "$lib/components/FlowMap.svelte";
+	import HeatMap from "$lib/components/HeatMap.svelte";
 
 	enum AddressStatus {
 		Initial = "Write the address of your CDM-Server",
@@ -25,22 +24,13 @@
 		}
 	}
 
-	let heatmapElement: HTMLElement;
-	let heatmapRuntime: h337.Heatmap<"value", "x", "y"> | undefined;
-
-	let maxX = 0;
-	let maxY = 0;
-
 	let timeIntervalBegin = dateToDatetimeString(new Date());
 	let timeIntervalOffset = 5;
 
 	let locationStream: EventSource | undefined;
 	let isLive = false;
 
-	const drawLocationsDebounced = debounce(drawLocations, { wait: 1000 });
-
 	let locations: Location[] = [];
-	$: drawLocationsDebounced(maxX, maxY, locations, heatmapRuntime);
 	$: if (isLive && browser) {
 		if (!locationStream) {
 			console.log("Connecting to mr. server pweese");
@@ -58,26 +48,6 @@
 	function handleNewLocations(event: MessageEvent<any>) {
 		console.log(event);
 	}
-
-	onMount(() => {
-		heatmapRuntime = h337.create({
-			container: heatmapElement,
-		});
-	});
-	onMount(() => {
-		const resizeObserver = new ResizeObserver((entries) => {
-			const entry = entries.find(
-				(entry) => entry.target === heatmapElement,
-			);
-			if (!entry) return;
-			maxX = entry.contentRect.width;
-			maxY = entry.contentRect.height;
-		});
-		resizeObserver.observe(heatmapElement);
-		return () => {
-			resizeObserver.disconnect();
-		};
-	});
 
 	$: {
 		getLocationsDebounced(serverUrl);
@@ -117,54 +87,6 @@
 
 		locations = await response.json();
 		addressStatus = AddressStatus.Valid;
-	}
-
-	function drawLocations(
-		maxX?: number,
-		maxY?: number,
-		locations?: Location[],
-		heatmapRuntime?: h337.Heatmap<"value", "x", "y">,
-	) {
-		if (!maxX || !maxY || !locations || !heatmapRuntime) {
-			return;
-		}
-		const rescaledLocations = rescaleLocations(
-			Math.floor(maxX),
-			Math.floor(maxY),
-			locations,
-		);
-
-		heatmapRuntime.setData({
-			max: 3,
-			min: 0,
-			data: [
-				...rescaledLocations.map((data) => {
-					return { ...data, value: 1 };
-				}),
-			],
-		});
-	}
-	function rescaleLocations(
-		maxX: number,
-		maxY: number,
-		locations: Location[],
-	) {
-		const realX = Math.max(...locations.map((location) => location.x));
-		const realY = Math.max(...locations.map((location) => location.y));
-
-		const scaleX = maxX / realX;
-		const scaleY = maxY / realY;
-
-		const rescaledLocations: Location[] = [];
-
-		for (const location of locations) {
-			rescaledLocations.push({
-				x: location.x * scaleX,
-				y: location.y * scaleY,
-			});
-		}
-
-		return rescaledLocations;
 	}
 
 	function dateToDatetimeString(date: Date): string {
@@ -214,7 +136,8 @@
 		minutes
 	</label>
 </fieldset>
-<div id="heatmap" bind:this={heatmapElement}></div>
+<HeatMap {locations}></HeatMap>
+<FlowMap {locations}></FlowMap>
 
 <style>
 	#settings > * {
@@ -222,11 +145,5 @@
 	}
 	#settings .serverFields {
 		display: inline;
-	}
-	#heatmap {
-		margin-left: auto;
-		margin-right: auto;
-		width: 90svw;
-		height: 80svh;
 	}
 </style>
