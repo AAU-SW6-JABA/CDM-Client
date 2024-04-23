@@ -1,11 +1,11 @@
 <script lang="ts">
-	import type { Location } from "$lib/Location";
 	import type h337 from "@mars3d/heatmap.js";
 	import { onMount } from "svelte";
 	import { rescaleLocations } from "$lib/rescaleLocations";
 	import debounceFn from "debounce-fn";
+	import type { LocationArray } from "$lib/schemas/zodSchemes";
 
-	export let locations: Location[];
+	export let locations: LocationArray;
 
 	let heatmapElement: HTMLElement;
 
@@ -42,7 +42,7 @@
 	function drawLocations(
 		maxX?: number,
 		maxY?: number,
-		locations?: Location[],
+		locations?: LocationArray,
 		heatmapRuntime?: h337.Heatmap<"value", "x", "y">,
 	) {
 		if (!maxX || !maxY || !locations || !heatmapRuntime) {

@@ -1,11 +1,11 @@
 <script lang="ts">
-	import type { Location } from "$lib/Location";
 	import { onMount } from "svelte";
 	import { rescaleLocations } from "$lib/rescaleLocations";
 	import FlowNode from "./FlowNode.svelte";
 	import debounceFn from "debounce-fn";
+	import type { Location, LocationArray } from "$lib/schemas/zodSchemes";
 
-	export let locations: Location[];
+	export let locations: LocationArray;
 
 	let flowmapElement: SVGSVGElement;
 
@@ -35,7 +35,7 @@
 	function drawLocations(
 		maxX?: number,
 		maxY?: number,
-		locations?: Location[],
+		locations?: LocationArray,
 	) {
 		if (!maxX || !maxY || !locations) {
 			return;

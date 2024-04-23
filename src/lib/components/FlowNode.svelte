@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { Location } from "../Location";
+	import type { Location } from "$lib/schemas/zodSchemes";
 
 	export let from: Location;
 	export let to: Location;

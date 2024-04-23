@@ -1,9 +1,9 @@
-import type { Location } from "./Location";
+import type { LocationArray } from "./schemas/zodSchemes";
 
 export function rescaleLocations(
 	maxX: number,
 	maxY: number,
-	locations: Location[],
+	locations: LocationArray,
 ) {
 	const realX = Math.max(...locations.map((location) => location.x));
 	const realY = Math.max(...locations.map((location) => location.y));
@@ -11,7 +11,7 @@ export function rescaleLocations(
 	const scaleX = maxX / realX;
 	const scaleY = maxY / realY;
 
-	const rescaledLocations: Location[] = [];
+	const rescaledLocations: LocationArray = [];
 
 	for (const location of locations) {
 		rescaledLocations.push({

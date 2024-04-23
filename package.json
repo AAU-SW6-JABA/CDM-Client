@@ -17,7 +17,8 @@
 		"@grpc/proto-loader": "=0.7.12",
 		"@mars3d/heatmap.js": "^2.0.7",
 		"debounce-fn": "^6.0.0",
-		"dotenv": "^16.4.5"
+		"dotenv": "^16.4.5",
+		"zod": "^3.23.3"
 	},
 	"devDependencies": {
 		"@sveltejs/adapter-auto": "^3.2.0",

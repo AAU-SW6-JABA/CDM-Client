@@ -1,10 +1,14 @@
 <script lang="ts">
-	import type { Location } from "$lib/Location";
 	import { browser } from "$app/environment";
 	import debounce from "debounce-fn";
 	import { URLParams } from "$lib/urlSearchParams";
 	import FlowMap from "$lib/components/FlowMap.svelte";
 	import HeatMap from "$lib/components/HeatMap.svelte";
+	import {
+		type Location,
+		type LocationArray,
+		ZodResponseBody,
+	} from "$lib/schemas/zodSchemes";
 
 	enum AddressStatus {
 		Initial = "Write the address of your CDM-Server",
@@ -30,7 +34,7 @@
 	let locationStream: EventSource | undefined;
 	let isLive = false;
 
-	let locations: Location[] = [];
+	let locations: LocationArray = [];
 	$: if (isLive && browser) {
 		if (!locationStream) {
 			console.log("Connecting to mr. server pweese");
@@ -51,12 +55,12 @@
 
 	$: {
 		getLocationsDebounced(serverUrl);
-		addressStatus = AddressStatus.Connecting;
 	}
 
 	const getLocationsDebounced = debounce(getLocations, { wait: 1000 });
 	async function getLocations(url: string) {
 		if (!browser) return;
+		addressStatus = AddressStatus.Connecting;
 
 		const timeIntervalBeginUnix = new Date(timeIntervalBegin).getTime();
 		const timeIntervalOffsetUnix =
@@ -80,12 +84,21 @@
 			},
 		});
 
-		if (!response.ok) {
+		const parsedResponse = ZodResponseBody.safeParse(await response.json());
+
+		if (!parsedResponse.success) {
 			addressStatus = AddressStatus.Invalid;
+			console.log("Failed to parse response");
 			return;
 		}
 
-		locations = await response.json();
+		if (!Array.isArray(parsedResponse.data)) {
+			addressStatus = AddressStatus.Invalid;
+			console.log(parsedResponse.data.error);
+			return;
+		}
+
+		locations = parsedResponse.data;
 		addressStatus = AddressStatus.Valid;
 	}
 
