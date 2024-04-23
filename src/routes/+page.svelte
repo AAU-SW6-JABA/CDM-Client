@@ -17,7 +17,6 @@
 		Connecting = "Connecting to server...",
 	}
 	let addressStatus: AddressStatus = AddressStatus.Initial;
-	let addressParagraphElement: HTMLParagraphElement;
 
 	let urlInputElement: HTMLInputElement;
 	let inputServerUrl: string;
@@ -29,7 +28,7 @@
 	}
 
 	let timeIntervalBegin = dateToDatetimeString(new Date());
-	let timeIntervalOffset = 5;
+	let timeIntervalOffset = -5;
 
 	let locationStream: EventSource | undefined;
 	let isLive = false;
@@ -124,11 +123,7 @@
 			placeholder="e.g. localhost:3000"
 		/>
 	</label>
-	<p
-		class="serverFields"
-		style="margin-left: 1em;"
-		bind:this={addressParagraphElement}
-	>
+	<p class="serverFields" style="margin-left: 1em;">
 		<i> {addressStatus} </i>
 	</p>
 	<label>

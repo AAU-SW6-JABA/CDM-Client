@@ -97,6 +97,7 @@ export const POST: RequestHandler = async ({ request }) => {
 										y: location.y,
 									});
 							});
+
 							resolve();
 						}
 					},
