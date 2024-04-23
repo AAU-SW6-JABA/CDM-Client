@@ -40,11 +40,7 @@
 		if (!maxX || !maxY || !locations) {
 			return;
 		}
-		const rescaledLocations = rescaleLocations(
-			maxX,
-			maxY,
-			locations,
-		);
+		const rescaledLocations = rescaleLocations(maxX, maxY, locations);
 
 		const newFlowNodes: Map<string, { from: Location; to: Location }> =
 			new Map();
