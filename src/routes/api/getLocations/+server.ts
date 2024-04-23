@@ -4,13 +4,15 @@ import { URLParams } from "$lib/urlSearchParams";
 import { createClient } from "$lib/grpcClient";
 import type { RoutesClient } from "../../../../gen/protobuf/cdm_protobuf/Routes.ts";
 import type { GetLocationsResponse__Output } from "../../../../gen/protobuf/cdm_protobuf/GetLocationsResponse";
-import { type ResponseBody, ZodResponseBody } from "$lib/schemas/zodSchemes";
+import {
+	type ResponseBody,
+	type LocationArray,
+	ZodResponseBody,
+} from "$lib/schemas/zodSchemes";
 
 enum RequestStateEnum {
 	INIT = 0,
-	LOADING = 1,
-	SUCCESS = 2,
-	ERROR = 3,
+	ERROR = 1,
 }
 
 class RequestState {
@@ -33,8 +35,8 @@ class RequestState {
 }
 
 export const POST: RequestHandler = async ({ request }) => {
-	let requestState = new RequestState(RequestStateEnum.INIT);
-	let response: ResponseBody = [];
+	const requestState = new RequestState(RequestStateEnum.INIT);
+	const response: LocationArray = [];
 
 	const url = new URL(request.url);
 	const serverURL = url.searchParams.get(URLParams.serverUrl);
