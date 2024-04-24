@@ -20,4 +20,11 @@
 <circle cx={from.x} cy={from.y} r="5"></circle>
 
 <style>
+	line {
+		stroke: blue;
+		stroke-width: 5px;
+	}
+	circle {
+		fill: blue;
+	}
 </style>
