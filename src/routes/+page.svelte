@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { browser } from "$app/environment";
 	import debounce from "debounce-fn";
+	import { dateToDatetimeString } from "$lib/dateTools";
 	import { URLParams } from "$lib/urlSearchParams";
 	import FlowMap from "$lib/components/FlowMap.svelte";
 	import HeatMap from "$lib/components/HeatMap.svelte";
@@ -184,15 +185,6 @@
 
 		locations = parsedResponse.data;
 		addressStatus = AddressStatus.Valid;
-	}
-
-	function dateToDatetimeString(date: Date): string {
-		const year = date.getFullYear();
-		const month = String(date.getMonth() + 1).padStart(2, "0");
-		const day = String(date.getDate()).padStart(2, "0");
-		const hours = String(date.getHours()).padStart(2, "0");
-		const minutes = String(date.getMinutes()).padStart(2, "0");
-		return `${year}-${month}-${day}T${hours}:${minutes}`;
 	}
 </script>
 
