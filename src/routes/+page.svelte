@@ -7,7 +7,13 @@
 	import {
 		type LocationArray,
 		ZodResponseBody,
+		ZodLiveResponseBody,
 	} from "$lib/schemas/zodSchemes";
+
+	enum DisplayMode {
+		Heatmap = "heatmap",
+		Flowmap = "flowmap",
+	}
 
 	enum AddressStatus {
 		Initial = "Write the address of your CDM-Server",
@@ -32,32 +38,112 @@
 	let locationStream: EventSource | undefined;
 	let isLive = false;
 
+	let displayMode: DisplayMode = DisplayMode.Heatmap;
+
 	let locations: LocationArray = [];
-	$: if (isLive && browser) {
-		if (!locationStream) {
-			console.log("Connecting to mr. server pweese");
-			locationStream = new EventSource("/api/subscribeToLocations");
-			locationStream.addEventListener("locations", handleNewLocations);
+
+	const handleNewDataSettingsDebounced = debounce(handleNewDataSettings, {
+		wait: 1000,
+	});
+	$: handleNewDataSettingsDebounced(
+		serverUrl,
+		isLive,
+		timeIntervalBegin,
+		timeIntervalOffset,
+	);
+	function handleNewDataSettings(
+		serverUrl: string,
+		isLive: boolean,
+		timeIntervalBegin: string,
+		timeIntervalOffset: number,
+	) {
+		if (!browser) return;
+		locations = [];
+		if (serverUrl) {
+			subscribeToLocations(serverUrl, isLive, timeIntervalOffset);
+			if (!isLive) {
+				getLocations(serverUrl, timeIntervalBegin, timeIntervalOffset);
+			}
+		} else {
+			subscribeToLocations("", false, 0);
 		}
-	} else {
-		if (locationStream) {
-			locationStream.close();
-			locationStream.removeEventListener("locations", handleNewLocations);
+	}
+
+	function subscribeToLocations(
+		serverUrl: string,
+		isLive: boolean,
+		timeIntervalOffset: number,
+	) {
+		if (isLive) {
+			getLocations(
+				serverUrl,
+				dateToDatetimeString(new Date()),
+				timeIntervalOffset,
+			);
+			if (locationStream) {
+				const previousServerUrl = new URL(
+					locationStream.url,
+				).searchParams.get(URLParams.serverUrl);
+				if (previousServerUrl !== serverUrl) {
+					closeLocationStream();
+				}
+			}
+			if (!locationStream) {
+				openLocationStream(serverUrl);
+			}
+		} else {
+			closeLocationStream();
+		}
+	}
+	function openLocationStream(serverUrl: string) {
+		if (locationStream !== undefined) {
+			throw new TypeError(
+				"Can't open the location stream when it is already active",
+			);
+		}
+		const subscribeUrl = new URL(
+			"/api/subscribeToLocations",
+			window.location.origin,
+		);
+		subscribeUrl.searchParams.set(URLParams.serverUrl, serverUrl);
+		locationStream = new EventSource(subscribeUrl);
+		locationStream.addEventListener("locations", handleNewLocations);
+	}
+	function closeLocationStream() {
+		if (locationStream && locationStream.OPEN) {
+			locationStream?.close();
+			locationStream?.removeEventListener(
+				"locations",
+				handleNewLocations,
+			);
 			locationStream = undefined;
 		}
 	}
+	function handleNewLocations(event: MessageEvent<string>) {
+		const earliestTime =
+			new Date(timeIntervalBegin).getTime() + timeIntervalOffset;
+		const previousValidLocations = locations.filter((location) => {
+			return Boolean(location.calctime > earliestTime);
+		});
 
-	function handleNewLocations(event: MessageEvent<LocationArray>) {
-		console.log(event);
+		const parsedResponse = ZodLiveResponseBody.safeParse(
+			JSON.parse(event.data),
+		);
+		if (!parsedResponse.success) {
+			addressStatus = AddressStatus.Invalid;
+			console.log("Failed to parse live response");
+			return;
+		}
+		const newLocations = parsedResponse.data.location;
+
+		locations = [...previousValidLocations, ...newLocations];
 	}
 
-	$: {
-		getLocationsDebounced(serverUrl);
-	}
-
-	const getLocationsDebounced = debounce(getLocations, { wait: 1000 });
-	async function getLocations(url: string) {
-		if (!browser) return;
+	async function getLocations(
+		serverUrl: string,
+		timeIntervalBegin: string,
+		timeIntervalOffset: number,
+	) {
 		addressStatus = AddressStatus.Connecting;
 
 		const timeIntervalBeginUnix = new Date(timeIntervalBegin).getTime();
@@ -65,7 +151,7 @@
 			timeIntervalBeginUnix + timeIntervalOffset * 60 * 1000;
 
 		const fetchUrl = new URL("/api/getLocations", window.location.origin);
-		fetchUrl.searchParams.set(URLParams.serverUrl, url);
+		fetchUrl.searchParams.set(URLParams.serverUrl, serverUrl);
 		fetchUrl.searchParams.set(
 			URLParams.timeIntervalBegin,
 			timeIntervalBeginUnix.toString(),
@@ -142,9 +228,20 @@
 		<input type="number" bind:value={timeIntervalOffset} />
 		minutes
 	</label>
+	<label>
+		Show as
+		<select bind:value={displayMode}>
+			<option value={DisplayMode.Heatmap}>Heatmap</option>
+			<option value={DisplayMode.Flowmap}>Flowmap</option>
+		</select>
+	</label>
 </fieldset>
-<HeatMap {locations}></HeatMap>
-<FlowMap {locations}></FlowMap>
+
+{#if displayMode === DisplayMode.Heatmap}
+	<HeatMap {locations}></HeatMap>
+{:else if displayMode === DisplayMode.Flowmap}
+	<FlowMap {locations}></FlowMap>
+{/if}
 
 <style>
 	#settings > * {

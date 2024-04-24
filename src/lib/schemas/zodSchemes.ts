@@ -22,3 +22,9 @@ export type LocationArray = z.infer<typeof ZodLocationArray>;
 export const ZodResponseBody = z.union([ZodResponseError, ZodLocationArray]);
 
 export type ResponseBody = z.infer<typeof ZodResponseBody>;
+
+export const ZodLiveResponseBody = z.object({
+	location: ZodLocationArray,
+});
+
+export type LiveResponseBody = z.infer<typeof ZodLiveResponseBody>;
