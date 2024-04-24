@@ -3,25 +3,7 @@ import type { RoutesClient } from "../../gen/protobuf/cdm_protobuf/Routes.ts";
 import protoLoader from "@grpc/proto-loader";
 import grpc from "@grpc/grpc-js";
 
-import dotenv from "dotenv";
-
-dotenv.config();
-
-export async function createClient(
-	address: string | undefined = undefined,
-): Promise<RoutesClient> {
-	let serverAddress: string;
-
-	if (typeof address !== "string") {
-		if (typeof process.env?.PORT !== "string") {
-			throw new TypeError("Please define a port in your env file (PORT)");
-		} else {
-			serverAddress = `localhost:${process.env.PORT}`;
-		}
-	} else {
-		serverAddress = address;
-	}
-
+export async function createClient(address: string): Promise<RoutesClient> {
 	const protoDefinitionPath = "./CDM-ProtocolBuffer/cdm_protobuf.proto";
 
 	const packageDefinition: protoLoader.PackageDefinition =
@@ -33,10 +15,5 @@ export async function createClient(
 	).cdm_protobuf;
 
 	/* eslint-disable-next-line  @typescript-eslint/no-unsafe-assignment */
-	return new packageObject.Routes(
-		serverAddress,
-		grpc.credentials.createInsecure(),
-	);
+	return new packageObject.Routes(address, grpc.credentials.createInsecure());
 }
-
-export const client: RoutesClient = await createClient();
