@@ -5,7 +5,6 @@
 	import FlowMap from "$lib/components/FlowMap.svelte";
 	import HeatMap from "$lib/components/HeatMap.svelte";
 	import {
-		type Location,
 		type LocationArray,
 		ZodResponseBody,
 	} from "$lib/schemas/zodSchemes";
@@ -48,7 +47,7 @@
 		}
 	}
 
-	function handleNewLocations(event: MessageEvent<any>) {
+	function handleNewLocations(event: MessageEvent<LocationArray>) {
 		console.log(event);
 	}
 
