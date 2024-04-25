@@ -132,7 +132,7 @@
 		);
 		if (!parsedResponse.success) {
 			addressStatus = AddressStatus.Invalid;
-			console.log("Failed to parse live response");
+			console.warn("Failed to parse live response", parsedResponse.error);
 			return;
 		}
 		const newLocations = parsedResponse.data.location;
@@ -173,13 +173,16 @@
 
 		if (!parsedResponse.success) {
 			addressStatus = AddressStatus.Invalid;
-			console.log("Failed to parse response");
+			console.warn("Failed to parse response", parsedResponse.error);
 			return;
 		}
 
 		if (!Array.isArray(parsedResponse.data)) {
 			addressStatus = AddressStatus.Invalid;
-			console.log(parsedResponse.data.error);
+			console.warn(
+				"Found error in response data",
+				parsedResponse.data.error,
+			);
 			return;
 		}
 
