@@ -1,21 +1,22 @@
 <script lang="ts">
+	import type { LocationArray } from "$lib/schemas/zodSchemes";
 	import type h337 from "@mars3d/heatmap.js";
 	import { onMount } from "svelte";
-	import { rescaleLocations } from "$lib/rescaleLocations";
 	import debounceFn from "debounce-fn";
-	import type { LocationArray } from "$lib/schemas/zodSchemes";
+
+	export let maxX: number;
+	export let maxY: number;
+	$: elementX = maxX ? Math.floor(maxX) : 100;
+	$: elementY = maxY ? Math.floor(maxY) : 100;
 
 	export let locations: LocationArray;
 
 	let heatmapElement: HTMLElement;
 
-	let maxX: number = 0;
-	let maxY: number = 0;
-
 	let heatmapRuntime: h337.Heatmap<"value", "x", "y"> | undefined;
 
 	const drawLocationsDebounced = debounceFn(drawLocations, { wait: 1000 });
-	$: drawLocationsDebounced(maxX, maxY, locations, heatmapRuntime);
+	$: drawLocationsDebounced(locations, heatmapRuntime);
 
 	onMount(async () => {
 		const { default: h337 } = await import("@mars3d/heatmap.js");
@@ -24,55 +25,38 @@
 		});
 	});
 
-	onMount(() => {
-		const resizeObserver = new ResizeObserver((entries) => {
-			const entry = entries.find(
-				(entry) => entry.target === heatmapElement,
-			);
-			if (!entry) return;
-			maxX = entry.contentRect.width;
-			maxY = entry.contentRect.height;
-		});
-		resizeObserver.observe(heatmapElement);
-		return () => {
-			resizeObserver.disconnect();
-		};
-	});
-
 	function drawLocations(
-		maxX?: number,
-		maxY?: number,
 		locations?: LocationArray,
 		heatmapRuntime?: h337.Heatmap<"value", "x", "y">,
 	) {
-		if (!maxX || !maxY || !locations || !heatmapRuntime) {
+		if (!locations || !heatmapRuntime) {
 			return;
 		}
-		const rescaledLocations = rescaleLocations(
-			Math.floor(maxX),
-			Math.floor(maxY),
-			locations,
-		);
 
 		heatmapRuntime.setData({
 			max: 3,
 			min: 0,
 			data: [
-				...rescaledLocations.map((data) => {
-					return { ...data, value: 1 };
+				...locations.map((data) => {
+					return {
+						x: Math.round(data.x),
+						y: Math.round(data.y),
+						value: 1,
+					};
 				}),
 			],
 		});
 	}
 </script>
 
-<div id="heatmap" bind:this={heatmapElement}></div>
+<div
+	id="heatmap"
+	style="
+		width: {elementX}px;
+		height: {elementY}px;
+	"
+	bind:this={heatmapElement}
+></div>
 
 <style>
-	#heatmap {
-		margin-left: auto;
-		margin-right: auto;
-		width: 90svw;
-		height: 80svh;
-	}
 </style>

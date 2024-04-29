@@ -28,3 +28,22 @@ export const ZodLiveResponseBody = z.object({
 });
 
 export type LiveResponseBody = z.infer<typeof ZodLiveResponseBody>;
+
+export const ZodAntenna = z.object({
+	aid: z.number(),
+	x: z.number(),
+	y: z.number(),
+});
+
+export type Antenna = z.infer<typeof ZodAntenna>;
+
+export const ZodAntennaArray = z.array(ZodAntenna).default([]);
+
+export type AntennaArray = z.infer<typeof ZodAntennaArray>;
+
+export const ZodAntennaResponseBody = z.union([
+	ZodResponseError,
+	ZodAntennaArray,
+]);
+
+export type AntennaResponseBody = z.infer<typeof ZodAntennaResponseBody>;

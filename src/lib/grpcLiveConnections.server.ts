@@ -36,11 +36,11 @@ clientControllers.subscribe(async (map) => {
 					const controllers =
 						get(clientControllers).get(serverUrl) ?? new Set();
 					for (const clientController of controllers) {
-						try{
+						try {
 							clientController.enqueue(eventData);
-						}catch(error){
+						} catch (error) {
 							controllers.delete(clientController);
-							clientControllers.update(map => map);
+							clientControllers.update((map) => map);
 						}
 					}
 				};
