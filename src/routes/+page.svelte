@@ -24,16 +24,19 @@
 
 	let urlInputElement: HTMLInputElement;
 	let inputServerUrl: string = $serverUrl;
-	const setNewServerUrlDebounced= debounce(setNewServerUrl, {
+	const setNewServerUrlDebounced = debounce(setNewServerUrl, {
 		wait: 500,
 	});
 	$: setNewServerUrlDebounced(inputServerUrl, urlInputElement);
-	function setNewServerUrl(inputServerUrl: string, urlInputElement: HTMLInputElement){
+	function setNewServerUrl(
+		inputServerUrl: string,
+		urlInputElement: HTMLInputElement,
+	) {
 		if (inputServerUrl && urlInputElement) {
-		if (urlInputElement.reportValidity()) {
-			$serverUrl = inputServerUrl;
+			if (urlInputElement.reportValidity()) {
+				$serverUrl = inputServerUrl;
+			}
 		}
-	}
 	}
 
 	let timeIntervalBegin = dateToDatetimeString(new Date());
