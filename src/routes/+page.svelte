@@ -50,7 +50,6 @@
 
 	let locations: LocationArray = [];
 	let antennas: AntennaArray = [];
-	$: console.log(antennas);
 
 	const handleNewDataSettingsDebounced = debounce(handleNewDataSettings, {
 		wait: 1000,
@@ -202,7 +201,6 @@
 		wait: 500,
 	});
 	async function getAntennas(serverUrl: string) {
-		console.log("getting antennas");
 		const fetchUrl = new URL("/api/getAntennas", window.location.origin);
 		fetchUrl.searchParams.set(URLParams.serverUrl, serverUrl);
 		const response = await fetch(fetchUrl, {

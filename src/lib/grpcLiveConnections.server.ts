@@ -17,7 +17,6 @@ const databases: Map<
 > = new Map();
 
 clientControllers.subscribe(async (map) => {
-	console.log(map);
 	for (const [serverUrl, set] of map) {
 		const database = databases.get(serverUrl);
 		if (set.size === 0) {
