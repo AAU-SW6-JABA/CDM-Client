@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { browser } from "$app/environment";
 	import debounce from "debounce-fn";
+	import { serverUrl } from "$lib/state/serverUrl";
 	import { dateToDatetimeString } from "$lib/dateTools";
 	import { URLParams } from "$lib/urlSearchParams";
 	import Map from "$lib/components/Map.svelte";
@@ -22,12 +23,17 @@
 	let addressStatus: AddressStatus = AddressStatus.Initial;
 
 	let urlInputElement: HTMLInputElement;
-	let inputServerUrl: string;
-	let serverUrl: string;
-	$: if (inputServerUrl && urlInputElement) {
+	let inputServerUrl: string = $serverUrl;
+	const setNewServerUrlDebounced= debounce(setNewServerUrl, {
+		wait: 500,
+	});
+	$: setNewServerUrlDebounced(inputServerUrl, urlInputElement);
+	function setNewServerUrl(inputServerUrl: string, urlInputElement: HTMLInputElement){
+		if (inputServerUrl && urlInputElement) {
 		if (urlInputElement.reportValidity()) {
-			serverUrl = inputServerUrl;
+			$serverUrl = inputServerUrl;
 		}
+	}
 	}
 
 	let timeIntervalBegin = dateToDatetimeString(new Date());
@@ -36,8 +42,8 @@
 	let locationStream: EventSource | undefined;
 	let isLive = false;
 	let showAntennas = true;
-	$: if (showAntennas && serverUrl) {
-		getAntennasDebounced(serverUrl);
+	$: if (showAntennas && $serverUrl) {
+		getAntennasDebounced($serverUrl);
 	}
 
 	let displayMode: DisplayMode = DisplayMode.Heatmap;
@@ -50,7 +56,7 @@
 		wait: 1000,
 	});
 	$: handleNewDataSettingsDebounced(
-		serverUrl,
+		$serverUrl,
 		isLive,
 		timeIntervalBegin,
 		timeIntervalOffset,
@@ -281,9 +287,9 @@
 	</label>
 	<button
 		on:click={() => {
-			getAntennasDebounced(serverUrl);
+			getAntennasDebounced($serverUrl);
 		}}
-		disabled={!serverUrl}
+		disabled={!$serverUrl}
 	>
 		Refresh antennas
 	</button>
