@@ -11,16 +11,25 @@ export function rescaleLocations(
 	locations: LocationArray;
 	antennas: AntennaArray;
 } {
-	const realX = Math.max(
-		1,
+	const realMinX = Math.min(
 		...locations.map((location) => location.x),
 		...antennas.map((antenna) => antenna.x),
 	);
-	const realY = Math.max(
-		1,
+	const realMaxX = Math.max(
+		...locations.map((location) => location.x),
+		...antennas.map((antenna) => antenna.x),
+	);
+	const realX = Math.max(realMaxX - realMinX, 1);
+
+	const realMinY = Math.min(
 		...locations.map((location) => location.y),
 		...antennas.map((antenna) => antenna.y),
 	);
+	const realMaxY = Math.max(
+		...locations.map((location) => location.y),
+		...antennas.map((antenna) => antenna.y),
+	);
+	const realY = Math.max(realMaxY - realMinY, 1);
 
 	const scaleX = (maxX - borderPadding * 2) / realX;
 	const scaleY = (maxY - borderPadding * 2) / realY;
@@ -30,8 +39,8 @@ export function rescaleLocations(
 	for (const location of locations) {
 		rescaledLocations.push({
 			...location,
-			x: location.x * scaleX + borderPadding,
-			y: location.y * scaleY + borderPadding,
+			x: (location.x - realMinX) * scaleX + borderPadding,
+			y: (location.y - realMinY) * scaleY + borderPadding,
 		});
 	}
 
@@ -40,8 +49,8 @@ export function rescaleLocations(
 	for (const antenna of antennas) {
 		rescaledAntennas.push({
 			...antenna,
-			x: antenna.x * scaleX + borderPadding,
-			y: antenna.y * scaleY + borderPadding,
+			x: (antenna.x - realMinX) * scaleX + borderPadding,
+			y: (antenna.y - realMinY) * scaleY + borderPadding,
 		});
 	}
 
