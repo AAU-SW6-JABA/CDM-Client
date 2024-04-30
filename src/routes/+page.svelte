@@ -1,20 +1,18 @@
 <script lang="ts">
 	import { browser } from "$app/environment";
 	import debounce from "debounce-fn";
+	import { serverUrl } from "$lib/state/serverUrl";
 	import { dateToDatetimeString } from "$lib/dateTools";
 	import { URLParams } from "$lib/urlSearchParams";
-	import FlowMap from "$lib/components/FlowMap.svelte";
-	import HeatMap from "$lib/components/HeatMap.svelte";
+	import Map from "$lib/components/Map.svelte";
 	import {
 		type LocationArray,
+		type AntennaArray,
 		ZodResponseBody,
 		ZodLiveResponseBody,
+		ZodAntennaResponseBody,
 	} from "$lib/schemas/zodSchemes";
-
-	enum DisplayMode {
-		Heatmap = "heatmap",
-		Flowmap = "flowmap",
-	}
+	import { DisplayMode } from "$lib/DisplayMode";
 
 	enum AddressStatus {
 		Initial = "Write the address of your CDM-Server",
@@ -25,11 +23,19 @@
 	let addressStatus: AddressStatus = AddressStatus.Initial;
 
 	let urlInputElement: HTMLInputElement;
-	let inputServerUrl: string;
-	let serverUrl: string;
-	$: if (inputServerUrl && urlInputElement) {
-		if (urlInputElement.reportValidity()) {
-			serverUrl = inputServerUrl;
+	let inputServerUrl: string = $serverUrl;
+	const setNewServerUrlDebounced = debounce(setNewServerUrl, {
+		wait: 500,
+	});
+	$: setNewServerUrlDebounced(inputServerUrl, urlInputElement);
+	function setNewServerUrl(
+		inputServerUrl: string,
+		urlInputElement: HTMLInputElement,
+	) {
+		if (inputServerUrl && urlInputElement) {
+			if (urlInputElement.reportValidity()) {
+				$serverUrl = inputServerUrl;
+			}
 		}
 	}
 
@@ -38,16 +44,21 @@
 
 	let locationStream: EventSource | undefined;
 	let isLive = false;
+	let showAntennas = true;
+	$: if (showAntennas && $serverUrl) {
+		getAntennasDebounced($serverUrl);
+	}
 
 	let displayMode: DisplayMode = DisplayMode.Heatmap;
 
 	let locations: LocationArray = [];
+	let antennas: AntennaArray = [];
 
 	const handleNewDataSettingsDebounced = debounce(handleNewDataSettings, {
 		wait: 1000,
 	});
 	$: handleNewDataSettingsDebounced(
-		serverUrl,
+		$serverUrl,
 		isLive,
 		timeIntervalBegin,
 		timeIntervalOffset,
@@ -189,10 +200,48 @@
 		locations = parsedResponse.data;
 		addressStatus = AddressStatus.Valid;
 	}
+	const getAntennasDebounced = debounce(getAntennas, {
+		wait: 500,
+	});
+	async function getAntennas(serverUrl: string) {
+		const fetchUrl = new URL("/api/getAntennas", window.location.origin);
+		fetchUrl.searchParams.set(URLParams.serverUrl, serverUrl);
+		const response = await fetch(fetchUrl, {
+			method: "POST",
+			body: JSON.stringify({ request: {} }),
+			headers: {
+				"Content-Type": "application/json",
+			},
+		});
+
+		const parsedResponse = ZodAntennaResponseBody.safeParse(
+			await response.json(),
+		);
+
+		if (!parsedResponse.success) {
+			addressStatus = AddressStatus.Invalid;
+			console.warn(
+				"Failed to parse antenna response",
+				parsedResponse.error,
+			);
+			return;
+		}
+
+		if (!Array.isArray(parsedResponse.data)) {
+			addressStatus = AddressStatus.Invalid;
+			console.warn(
+				"Found error in antenna response data",
+				parsedResponse.data.error,
+			);
+			return;
+		}
+
+		antennas = parsedResponse.data;
+	}
 </script>
 
 <h1>Heatmap</h1>
-<fieldset id="settings">
+<fieldset id="settings" class="settings">
 	<legend>Settings</legend>
 	<label class="serverFields">
 		Use server
@@ -231,15 +280,26 @@
 		</select>
 	</label>
 </fieldset>
+<fieldset id="antenna-settings" class="settings">
+	<legend>Antennas</legend>
+	<label>
+		Show antennas
+		<input type="checkbox" bind:checked={showAntennas} />
+	</label>
+	<button
+		on:click={() => {
+			getAntennasDebounced($serverUrl);
+		}}
+		disabled={!$serverUrl}
+	>
+		Refresh antennas
+	</button>
+</fieldset>
 
-{#if displayMode === DisplayMode.Heatmap}
-	<HeatMap {locations}></HeatMap>
-{:else if displayMode === DisplayMode.Flowmap}
-	<FlowMap {locations}></FlowMap>
-{/if}
+<Map {displayMode} {showAntennas} {locations} {antennas} />
 
 <style>
-	#settings > * {
+	.settings > * {
 		display: block;
 	}
 	#settings .serverFields {

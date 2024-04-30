@@ -1,50 +1,23 @@
 <script lang="ts">
-	import { onMount } from "svelte";
-	import { rescaleLocations } from "$lib/rescaleLocations";
-	import FlowNode from "./FlowNode.svelte";
-	import debounceFn from "debounce-fn";
 	import type { Location, LocationArray } from "$lib/schemas/zodSchemes";
+	import debounceFn from "debounce-fn";
+	import FlowNode from "./FlowNode.svelte";
 
 	export let locations: LocationArray;
-
-	let flowmapElement: SVGSVGElement;
-
-	let maxX: number = 0;
-	let maxY: number = 0;
 
 	let flowNodes: { from: Location; to: Location }[] = [];
 
 	const drawLocationsDebounced = debounceFn(drawLocations, { wait: 1000 });
-	$: drawLocationsDebounced(maxX, maxY, locations);
+	$: drawLocationsDebounced(locations);
 
-	onMount(() => {
-		const resizeObserver = new ResizeObserver((entries) => {
-			const entry = entries.find(
-				(entry) => entry.target === flowmapElement,
-			);
-			if (!entry) return;
-			maxX = entry.contentRect.width;
-			maxY = entry.contentRect.height;
-		});
-		resizeObserver.observe(flowmapElement);
-		return () => {
-			resizeObserver.disconnect();
-		};
-	});
-
-	function drawLocations(
-		maxX?: number,
-		maxY?: number,
-		locations?: LocationArray,
-	) {
-		if (!maxX || !maxY || !locations) {
+	function drawLocations(locations?: LocationArray) {
+		if (!locations) {
 			return;
 		}
-		const rescaledLocations = rescaleLocations(maxX, maxY, locations);
 
 		const newFlowNodes: Map<string, { from: Location; to: Location }> =
 			new Map();
-		for (const location of rescaledLocations) {
+		for (const location of locations) {
 			if (newFlowNodes.has(location.identifier)) {
 				const entry = newFlowNodes.get(location.identifier)!;
 				if (location.calctime < entry.from.calctime) {
@@ -65,7 +38,7 @@
 	}
 </script>
 
-<svg id="flowmap" bind:this={flowmapElement}>
+<svg id="flowmap">
 	{#each flowNodes as flowNode}
 		<FlowNode from={flowNode.from} to={flowNode.to}></FlowNode>
 	{/each}
@@ -88,9 +61,7 @@
 
 <style>
 	#flowmap {
-		margin-left: auto;
-		margin-right: auto;
-		width: 90svw;
-		height: 80svh;
+		width: 100%;
+		height: 100%;
 	}
 </style>

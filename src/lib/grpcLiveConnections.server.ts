@@ -17,7 +17,6 @@ const databases: Map<
 > = new Map();
 
 clientControllers.subscribe(async (map) => {
-	console.log(map);
 	for (const [serverUrl, set] of map) {
 		const database = databases.get(serverUrl);
 		if (set.size === 0) {
@@ -36,11 +35,11 @@ clientControllers.subscribe(async (map) => {
 					const controllers =
 						get(clientControllers).get(serverUrl) ?? new Set();
 					for (const clientController of controllers) {
-						try{
+						try {
 							clientController.enqueue(eventData);
-						}catch(error){
+						} catch (error) {
 							controllers.delete(clientController);
-							clientControllers.update(map => map);
+							clientControllers.update((map) => map);
 						}
 					}
 				};
