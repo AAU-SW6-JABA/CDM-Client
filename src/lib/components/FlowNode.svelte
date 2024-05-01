@@ -21,10 +21,10 @@
 
 <style>
 	line {
-		stroke: blue;
+		stroke: var(--flow-color);
 		stroke-width: 5px;
 	}
 	circle {
-		fill: blue;
+		fill: var(--flow-color);
 	}
 </style>
