@@ -40,7 +40,7 @@
 	}
 
 	let timeIntervalBegin = dateToDatetimeString(new Date());
-	let timeIntervalOffset = -5;
+	let timeIntervalOffset = -0.3;
 
 	let locationStream: EventSource | undefined;
 	let isLive = false;
