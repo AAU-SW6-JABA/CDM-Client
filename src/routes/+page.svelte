@@ -132,8 +132,10 @@
 		}
 	}
 	function handleNewLocations(event: MessageEvent<string>) {
-		const earliestTime =
-			new Date(timeIntervalBegin).getTime() + timeIntervalOffset;
+		const latestTime = isLive
+			? Date.now()
+			: new Date(timeIntervalBegin).getTime();
+		const earliestTime = latestTime + timeIntervalOffset * 60 * 1000;
 		const previousValidLocations = locations.filter((location) => {
 			return Boolean(location.calctime > earliestTime);
 		});

@@ -3,9 +3,11 @@
 	import debounceFn from "debounce-fn";
 	import FlowNode from "./FlowNode.svelte";
 
+	type FlowNodeData = { from: Location; to: Location };
+
 	export let locations: LocationArray;
 
-	let flowNodes: { from: Location; to: Location }[] = [];
+	let flowNodes: FlowNodeData[] = [];
 
 	const drawLocationsDebounced = debounceFn(drawLocations, { wait: 1000 });
 	$: drawLocationsDebounced(locations);
@@ -15,8 +17,7 @@
 			return;
 		}
 
-		const newFlowNodes: Map<string, { from: Location; to: Location }> =
-			new Map();
+		const newFlowNodes: Map<string, FlowNodeData> = new Map();
 		for (const location of locations) {
 			if (newFlowNodes.has(location.identifier)) {
 				const entry = newFlowNodes.get(location.identifier)!;
