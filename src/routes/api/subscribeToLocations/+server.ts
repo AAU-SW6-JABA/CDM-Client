@@ -9,7 +9,7 @@ export const GET: RequestHandler = ({ request }) => {
 	const serverURL = url.searchParams.get(URLParams.serverUrl);
 	if (!serverURL) {
 		throw new Error(
-			"TODO: Error handeling - serverURL is required to subscribe to locations.",
+			"TODO: Error handling - serverURL is required to subscribe to locations.",
 		);
 	}
 
